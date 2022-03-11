@@ -1,7 +1,9 @@
 package com.progile.resttemplate;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.progile.resttemplate.dto.IssuerTransactionDao;
-import com.progile.resttemplate.dto.IssuerTransactionMapper;
 import com.progile.resttemplate.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -32,8 +34,12 @@ public class RestTemplateRunner implements CommandLineRunner {
         transactionRepository.saveAll(getTransactions());
 
     }
-        private List<IssuerTransactionDao> getTransactions() {
-            // add basic authentication header
+        private List<IssuerTransactionDao> getTransactions() throws JsonProcessingException {
+
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.enable(SerializationFeature.INDENT_OUTPUT);
+
+        // add basic authentication header
             headers.setBasicAuth("clearing-issuing", "9088cdc5-4d76-4494-9ef6-60dee2bb2e2f");
 
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -50,6 +56,7 @@ public class RestTemplateRunner implements CommandLineRunner {
             // check response
             if (response.getStatusCode() == HttpStatus.OK) {
                 System.out.println("Request Successful.");
+                System.out.println(mapper.writeValueAsString(response.getBody()));
                 System.out.println(Arrays.stream(response.getBody())
                         .map(r->r.getPan())
                         .collect(Collectors.toList()));
