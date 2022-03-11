@@ -1,12 +1,17 @@
 server:
   port: 8080
+
 spring:
   jpa:
     open-in-view: 'true'
     database-platform: org.hibernate.dialect.H2Dialect
     defer-datasource-initialization: 'true'
     hibernate:
-      ddl-auto: create
+      ddl-auto: none
+    properties:
+      show-sql: false
+      hibernate:
+        format_sql: true
   datasource:
     username: sa
     url: jdbc:h2:mem:testdb
@@ -19,3 +24,13 @@ spring:
     console:
       enabled: 'true'
       path: /h2-console
+
+management:
+  trace:
+    http:
+      enabled: true
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: info

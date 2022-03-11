@@ -1,9 +1,7 @@
 package com.progile.resttemplate.controller;
 
-import com.progile.resttemplate.dto.Employee;
-import com.progile.resttemplate.dto.UserResponse;
-import com.progile.resttemplate.repository.EmployeeRepository;
-import com.progile.resttemplate.repository.UserResponseRepository;
+import com.progile.resttemplate.dto.IssuerTransactionDao;
+import com.progile.resttemplate.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,16 +12,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class Controller {
 
-    private final EmployeeRepository employeeRepository;
-    private final UserResponseRepository userResponseRepository;
+    private final TransactionRepository transactionRepository;
 
-    @GetMapping("/employees")
-    public List<Employee> getAllEmployees() {
-        return employeeRepository.findAll();
+    @GetMapping("/transactions")
+    public List<IssuerTransactionDao> getAllTranscations() {
+        return transactionRepository.findAll();
     }
 
-    @GetMapping("/users")
-    public List<UserResponse> getAllUsers() {
-        return userResponseRepository.findAll();
-    }
 }

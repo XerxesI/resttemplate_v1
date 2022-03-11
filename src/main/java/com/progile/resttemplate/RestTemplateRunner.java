@@ -1,100 +1,68 @@
 package com.progile.resttemplate;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.progile.resttemplate.dto.Employee;
-import com.progile.resttemplate.dto.UserResponse;
-import com.progile.resttemplate.repository.EmployeeRepository;
-import com.progile.resttemplate.repository.UserResponseRepository;
+import com.progile.resttemplate.dto.IssuerTransactionDao;
+import com.progile.resttemplate.dto.IssuerTransactionMapper;
+import com.progile.resttemplate.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class RestTemplateRunner implements CommandLineRunner {
 
     @Autowired
-    public UserResponseRepository userResponseRepository;
+    public TransactionRepository transactionRepository;
 
-    @Autowired
-    public EmployeeRepository employeeRepository;
+    private final String GET_ALL_TRANSACTIONS_API = "https://test.estcard.ee/acquiring/clearing-service/rest/v1/issuer/transaction/info/2022-01-22";
+    RestTemplate restTemplate = new RestTemplate();
 
-    private static final String GET_ALL_USERS_API = "https://jsonplaceholder.typicode.com/users";
-    private static final String GET_ALL_EMPLOYEES_API = "https://jsonplaceholder.typicode.com/todos";
-    static RestTemplate restTemplate = new RestTemplate();
+    // create headers
+    HttpHeaders headers = new HttpHeaders();
+
     @Override
     public void run(String... args) throws Exception {
-//        ObjectMapper mapper = new ObjectMapper();
-//        mapper.enable(SerializationFeature.INDENT_OUTPUT);
-//        String json = mapper.writeValueAsString(callUserApi());
-//        System.out.println(json);
 
-        // employeeRepository.saveAll(Arrays.asList(callEmployeesAPI2()));
-        employeeRepository.saveAll(callEmployeesAPI3());
-        userResponseRepository.saveAll(callUserApi2());
+        transactionRepository.saveAll(getTransactions());
 
     }
+        private List<IssuerTransactionDao> getTransactions() {
+            // add basic authentication header
+            headers.setBasicAuth("clearing-issuing", "9088cdc5-4d76-4494-9ef6-60dee2bb2e2f");
+
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+            // build the request
+            HttpEntity request = new HttpEntity(headers);
+            ResponseEntity<IssuerTransactionDao[]> response = restTemplate.exchange(
+                    GET_ALL_TRANSACTIONS_API,
+                    HttpMethod.GET,
+                    request,
+                    IssuerTransactionDao[].class
+            );
+            // check response
+            if (response.getStatusCode() == HttpStatus.OK) {
+                System.out.println("Request Successful.");
+                System.out.println(Arrays.stream(response.getBody())
+                        .map(r->r.getPan())
+                        .collect(Collectors.toList()));
+            } else {
+                System.out.println("Request Failed");
+                System.out.println(response.getStatusCode());
+            }
+
+            IssuerTransactionDao[] transactionArray = response.getBody();
 
 
-    private List<UserResponse> callUserApi() throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
-
-        ResponseEntity<List> response =
-                restTemplate.getForEntity(GET_ALL_USERS_API, List.class);
-        List<UserResponse> userResponses = response.getBody();
-
-//        System.out.println(employees);
-//        String json = mapper.writeValueAsString(userResponses);
-//        System.out.println(json);
-        return userResponses;
-    }
-
-    private List<Employee> callEmployeesAPI() throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
-
-        ResponseEntity<List> response =
-                restTemplate.getForEntity(GET_ALL_EMPLOYEES_API, List.class);
-        List<Employee> employees = response.getBody();
-
-        System.out.println(employees);
-//        String json = mapper.writeValueAsString(employees);
-//        System.out.println(json);
-        return employees;
-    }
-    private List<Employee> callEmployeesAPI2()  {
-        ResponseEntity<List> response =
-                restTemplate.getForEntity(GET_ALL_EMPLOYEES_API, List.class);
-        List<Employee> employees = response.getBody();
-
-        System.out.println(employees);
-
-        return employees;
-    }
-    private List<Employee> callEmployeesAPI3()  {
-        List<Employee> employees =
-                Arrays.asList(restTemplate.getForObject(GET_ALL_EMPLOYEES_API, Employee[].class));
-
-        System.out.println(employees);
-
-        return employees;
-    }
-
-    private List<UserResponse> callUserApi2() {
-        List<UserResponse> userResponses =
-                Arrays.asList(restTemplate.getForObject(GET_ALL_USERS_API, UserResponse[].class));
-
-//        System.out.println(employees);
-//        String json = mapper.writeValueAsString(userResponses);
-//        System.out.println(json);
-        return userResponses;
+        return Arrays.stream(transactionArray)
+                .collect(Collectors.toList());
     }
 
 }
